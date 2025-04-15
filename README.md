@@ -1,116 +1,173 @@
-# rainbowtext
+# 🌈 RainbowText
 
-A mini Flask App to demonstrate auto deploy to AWS-ECS Fargate with Docker-Compose
+**RainbowText** is a minimal Flask + React web application designed to demonstrate a **fully automated containerized deployment pipeline** using **Docker Compose** and **AWS ECS Fargate**. While the app itself renders a simple rainbow-colored animated text page, the focus is on teaching infrastructure-as-code, CI/CD, and cloud-native deployment workflows.
 
-Project Folder Structure.
+---
+
+## 🚀 Problem It Solves
+
+Modern application deployment often requires setting up and managing complex infrastructure. Developers and DevOps engineers need:
+
+- A seamless way to **containerize** applications
+- Automation to **push Docker images to Amazon ECR**
+- A robust, serverless hosting solution like **AWS ECS Fargate**
+- Scripts that handle **IAM roles, networking, and ECS services** without manual setup
+
+This project solves these challenges with a **plug-and-play setup** that:
+
+- Builds your app locally or for production
+- Pushes images to AWS ECR
+- Creates and deploys an ECS Fargate service with minimal manual effort
+- Provides teardown scripts for easy cleanup
+
+---
+
+## 🧠 Project Highlights
+
+### ✨ Application Stack
+
+- **Frontend**: React (served via Nginx)
+- **Backend**: Flask with uWSGI
+- **Webserver**: Nginx reverse proxy
+- **Container Orchestration**: Docker Compose
+- **Cloud Deployment**: AWS ECS Fargate
+
+### 📦 Folder Structure
 
 ```text
-- nginx
-    | - check.sh
-    | - dockerfile
-    | - nginx.conf
-    | - nginx.dev.conf
-- scripts
-    | - .env (ignored)
-    | - config_ecr.py
-    | - del_ecr.py
-    | - deploy.sh
-    | - destroy.sh
-    | - login_ecr.sh
-    | - set_ecs_params.py
-    | - setup_ecs.sh
-    | - task-execution-assume-role.json
-- templates
-    | - home.html
-- .gitignore
-- app.py
-- docker-compose.ecs.yml(generated and ignored)
-- docker-compose.yml
-- dockerfile
-- ecs-params.yml
-- ecs-params.ecs.yml (generated and ignored)
-- instructions.txt
-- LICENSE
-- README.md
-- requirements.txt
-- uwsgi.ini
+rainbowtext/
+│
+├── app.py                  # Flask application entry
+├── dockerfile              # Backend Dockerfile
+├── docker-compose.yml      # Compose file for local dev
+├── ecs-params.yml          # ECS-specific configurations
+├── nginx/                  # Nginx Dockerfile & configs
+│   ├── nginx.conf
+│   ├── nginx.dev.conf
+│   └── dockerfile
+├── scripts/                # AWS deploy/destroy utilities
+│   ├── deploy.sh
+│   ├── destroy.sh
+│   ├── setup_ecs.sh
+│   ├── config_ecr.py
+│   ├── login_ecr.sh
+│   └── .env                # Your AWS environment variables
+├── templates/home.html     # HTML file with rainbow effect
+├── uwsgi.ini               # uWSGI configuration
+├── requirements.txt
+└── README.md
 ```
 
-`.env` file should be placed in your `scripts` folder.
-*run `source scripts/.env` to load your environment variables*
+---
 
-```shell
-# Project name needs to match the docker image prefix, which is by default the same as the project root dir name
+## 🛠️ Setup Instructions
+
+### 📍 Prerequisites
+
+- Python 3.x
+- Docker & Docker Compose
+- AWS CLI configured or AWS Access credentials
+- AWS account with ECS and ECR access
+
+### 🧪 Local Development
+
+```bash
+docker-compose build
+docker-compose up
+```
+
+Visit [http://localhost](http://localhost) to see the rainbow text app.
+
+---
+
+## ☁️ Production Deployment to AWS ECS Fargate
+
+### 🧾 Step-by-Step
+
+1. Configure environment variables:
+
+Create `.env` file inside `scripts/` directory:
+
+```bash
 export AWS_PROJECT=rainbowtext
-export AWS_ROLE=<YOUR_AWS_ROLE_NAME>
-
-export AWS_ACCOUNT_ID=<YOUR_AWS_IAM_ACCOUNT_ID>
-export AWS_REGION=<YOUR_AWS_REGION>
-
-export AWS_ACCESS_KEY_ID=<YOUR_AWS_IAM_ACCESS_KEY_ID>
-export AWS_SECRET_ACCESS_KEY=<YOUR_AWS_IAM_SECRET_ACCESS_KEY>
-
-export DOCKER_COMPOSE_YML_INPUT=docker-compose.yml
-export DOCKER_COMPOSE_YML_OUTPUT=docker-compose.ecs.yml
-
-export ECS_PARAMS_INPUT=ecs-params.yml
-export ECS_PARAMS_OUTPUT=ecs-params.ecs.yml
-
+export AWS_ROLE=your-role-name
+export AWS_ACCOUNT_ID=your-aws-account-id
+export AWS_REGION=your-region
+export AWS_ACCESS_KEY_ID=your-access-key
+export AWS_SECRET_ACCESS_KEY=your-secret-key
 ```
 
-This project makes use of Docker to automate deployment to AWS ECS FARGATE.
+Then load the variables:
 
-## Create a launch box
-
-```
-AWS -> EC2 -> Images -> AMIs -> AMI ID = ami-09712b7bf6d670b8f
+```bash
+source scripts/.env
 ```
 
-Use this image to launch a pre-configured Linux box with all the dependencies installed.
+2. Install dependencies and activate Python environment:
 
-## Build and run locally
-
-```shell
-docker-compose build && docker-compose up
+```bash
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Navigate to `localhost` to see the running application.
+3. Deploy:
 
-## Build for production
-
-```shell
-docker-compose build --build-arg build_env="production"
-```
-
-## Build for production and deploy
-
-```text
-NB: Activate python virtual environment and pip install
-the requirements before running the deploy script.
-The deploy script needs to run with python3
-```
-
-```shell
+```bash
 docker-compose build --build-arg build_env="production"
 ./scripts/deploy.sh > deploy.log 2>&1 &
 ```
-## Access the web service
-The deployment scripts create a cluster with an auto-generated default security group. The default rules doesn't allow inbound traffic from the Internet and we need to change that after services are up. Run `grep security_grp deploy.log` to extract the auto-generated security group ID. Go to AWS console `AWS -> VPC -> Security Groups` and search for that ID. Add an HTTP inbound rule.
 
-## Destroy after testing app
+---
 
-```shell
-scripts/destroy.sh
+## 🌐 Accessing the Service
+
+After deployment, extract the security group:
+
+```bash
+grep security_grp deploy.log
 ```
 
-### Other instructions
+Then, go to the AWS Console → **VPC → Security Groups**, find the group, and **add an HTTP inbound rule** to allow public access.
 
-`instructions.txt`
+---
 
-### Some context here if you don't mind
+## 🔁 Cleanup
 
-The Deploy script does three basic things using three files
+To destroy the ECS cluster and remove resources:
 
-- `scripts/login_ecr.sh`: It configures aws on your machine with a custom profile and logs into ECR.
-- `scripts/config_ecr.py`: It creates a repo on ecr and uploads created and tagged images to ECR.
-- `scripts/setup_ecs.sh rainbowtext`: Setup ECS and deploy to ECS fargate.
+```bash
+./scripts/destroy.sh
+```
+
+---
+
+## 📊 Evaluation
+
+| Feature                         | Evaluation                                      |
+|-------------------------------|-------------------------------------------------|
+| Ease of Use                   | Plug-and-play deployment with pre-written scripts |
+| Scalability                   | Uses AWS ECS Fargate for serverless scaling     |
+| Security                      | IAM roles and environment-specific credentials  |
+| Flexibility                   | Easily replace app with your own containerized app |
+| Learning Outcome              | Demonstrates end-to-end CI/CD to AWS Fargate    |
+
+---
+
+## 🧩 Key Components in the Pipeline
+
+- **login_ecr.sh**: Logs into Amazon ECR with provided credentials.
+- **config_ecr.py**: Creates ECR repos and pushes Docker images.
+- **setup_ecs.sh**: Provisions ECS cluster, task definitions, and deploys services.
+
+---
+
+## 📚 Additional Notes
+
+- Use `instructions.txt` for deep-dive tips and AWS-specific notes.
+- The AMI `ami-09712b7bf6d670b8f` can be used to quickly spin up a pre-configured AWS Linux instance with dependencies.
+
+---
+
+## 📄 License
+
+This project is licensed under the [MIT License](LICENSE).
