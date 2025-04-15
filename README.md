@@ -1,4 +1,4 @@
-# 🌈 RainbowText
+# 🌈 FargaText – play on Fargate + text rendering
 
 **RainbowText** is a minimal Flask + React web application designed to demonstrate a **fully automated containerized deployment pipeline** using **Docker Compose** and **AWS ECS Fargate**. While the app itself renders a simple rainbow-colored animated text page, the focus is on teaching infrastructure-as-code, CI/CD, and cloud-native deployment workflows.
 
